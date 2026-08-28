@@ -1,7 +1,34 @@
 [project]
 name = "access-vsr-inference"
 version = "0.1.0"
-description = "Add your description here"
+description = "Video super-resolution inference: single-step diffusion SR with RIFE keyframe interpolation"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "torch>=2.1",
+    "numpy>=1.24",
+    "diffusers==0.33.0",
+    "transformers==4.37.2",
+    "huggingface-hub",
+    "safetensors",
+    "accelerate",
+]
+
+[project.optional-dependencies]
+# NATTEN ships per-torch/CUDA wheels and is not on PyPI for every combination.
+# Install it matched to your torch/CUDA build, e.g.
+#   uv pip install natten==0.21.5+torch2100cu128 -f https://whl.natten.org
+natten = ["natten"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["vsr"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

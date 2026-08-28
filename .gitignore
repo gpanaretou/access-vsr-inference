@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+.pytest_cache/
+
+# Model weights cache (default is ~/.cache/vsr)
+weights/
