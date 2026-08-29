@@ -118,7 +118,7 @@ pulled from the Hub by `diffusers`. RIFE weights are only fetched when `k > 1`.
 | Argument | Default | Notes |
 |---|---|---|
 | `k` | `1` | Keyframe stride. Also overridable per call: `pipeline(frames, k=3)`. |
-| `natten_layers` | `0` | Replace this many 240-dim attention layers with NATTEN. Requires the `natten` extra. |
+| `natten_layers` | `0` | Replace this many 240-dim attention layers with NATTEN. Requires the `natten` extra; without it the pipeline prints a notice and keeps standard attention. |
 | `sr_batch_size` | `4` | Frames per diffusion call. Larger is markedly cheaper per frame; bounded by VRAM. |
 | `interpolation_batch_size` | `8` | Keyframe pairs per RIFE call. |
 | `compile_decoder` | `False` | `torch.compile` the decoder. Recompiles on every new input resolution — only worth it for a fixed-resolution workload. |

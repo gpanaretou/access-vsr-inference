@@ -314,6 +314,9 @@ class SuperResolutionPipeline:
         body.8 is the UNet's upsampling decoder (3 attention layers at 240 dim);
         body.0 is the downsampling encoder (2 layers at 240 dim). This is a
         one-way toggle -- build a fresh pipeline to change the layer count.
+
+        If the `natten` package is not installed the swap is skipped and the
+        pipeline keeps its standard attention processors.
         """
         if self._natten_applied:
             raise RuntimeError(
@@ -335,7 +338,17 @@ class SuperResolutionPipeline:
                 f"cannot exceed {max_layers} layers for {target_body}, got {count}"
             )
 
-        from .natten_processor import AutoNattenAttentionProcessor2D
+        try:
+            from .natten_processor import AutoNattenAttentionProcessor2D
+        except ImportError as exc:
+            # Keeping the stock AttnProcessor2_0 processors is a valid config,
+            # just slower at high resolutions -- no reason to hard-fail here.
+            print(
+                f"[vsr] natten is unavailable ({exc}); falling back to standard "
+                "attention. Install it with: "
+                "uv pip install natten==0.21.5+torch2100cu128 -f https://whl.natten.org"
+            )
+            return
 
         natten_processor = AutoNattenAttentionProcessor2D(
             kernel_size=kernel_size, dilation=dilation, stride=stride
