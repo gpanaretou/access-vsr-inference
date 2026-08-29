@@ -157,9 +157,9 @@ class VSRPipeline:
         needs (K - 1) RIFE calls for the full-length gaps plus a few for the
         shorter tail gap, rather than one call per synthesized frame.
         """
-        for timesteps, gaps in group_gaps_by_timesteps(gaps).items():
-            for start in range(0, len(gaps), self.interpolation_batch_size):
-                chunk = gaps[start : start + self.interpolation_batch_size]
+        for timesteps, g in group_gaps_by_timesteps(gaps).items():
+            for start in range(0, len(g), self.interpolation_batch_size):
+                chunk = g[start : start + self.interpolation_batch_size]
                 img0 = torch.cat([hr[gap.start] for gap in chunk])
                 img1 = torch.cat([hr[gap.end] for gap in chunk])
 

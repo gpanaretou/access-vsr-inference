@@ -4,7 +4,6 @@ import math
 
 import torch.nn.functional as F
 from diffusers.models.attention_processor import AttnProcessor2_0
-
 from natten import na2d
 
 

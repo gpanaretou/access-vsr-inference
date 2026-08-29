@@ -7,13 +7,15 @@ Symbols are resolved lazily so that `import vsr` -- and in particular
 from .scheduling import Gap, Plan, is_keyframe, make_gap, plan_schedule
 
 __all__ = [
+    "Gap",
+    "InterpolationPipeline",
+    "Plan",
+    "SuperResolutionPipeline",
     "VSRPipeline",
     "VSRStream",
-    "SuperResolutionPipeline",
-    "InterpolationPipeline",
+    "is_keyframe",
+    "make_gap",
     "plan_schedule",
-    "Plan",
-    "Gap",
 ]
 
 _LAZY = {

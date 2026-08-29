@@ -10,7 +10,6 @@ import copy
 import types
 
 import torch
-import torch.nn as nn
 from diffusers import StableDiffusionPipeline
 from diffusers.models.attention import BasicTransformerBlock
 from diffusers.models.autoencoders.vae import Decoder
@@ -25,6 +24,7 @@ from diffusers.models.unets.unet_2d_blocks import (
     UpBlock2D,
 )
 from diffusers.models.upsampling import Upsample2D
+from torch import nn
 
 from ..padding import pad_to_multiple, scale_padding, unpad_tensor
 from .forward import (

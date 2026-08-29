@@ -1,6 +1,5 @@
 """Reflect-padding helpers shared by the SR and interpolation stages."""
 
-import torch
 import torch.nn.functional as F
 
 
@@ -30,10 +29,6 @@ def pad_to_multiple(image_tensor, divisor=16):
 
     padding = (pad_left, pad_right, pad_top, pad_bottom)
 
-    # Reflect padding requires every pad to be smaller than its dimension, which
-    # a small frame can violate (e.g. a 16px side padded to a multiple of 64).
-    # Replicate has no such limit; it is only reached where reflect would have
-    # raised, so results are unchanged for any size that already worked.
     mode = "reflect" if max(pad_h, pad_w) < min(height, width) else "replicate"
     return F.pad(image_tensor, padding, mode=mode), padding
 

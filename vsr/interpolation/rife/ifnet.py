@@ -7,8 +7,8 @@ never reached with fastmode=True.
 """
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
 from .warp import warp
 

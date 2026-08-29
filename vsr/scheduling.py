@@ -12,6 +12,7 @@ every (num_frames, k) pair instead of only when (num_frames - 1) % k == 0.
 """
 
 from dataclasses import dataclass
+from itertools import pairwise
 
 
 @dataclass(frozen=True)
@@ -93,7 +94,7 @@ def plan_schedule(num_frames: int, k: int) -> Plan:
 
     gaps = [
         gap
-        for gap in (make_gap(start, end) for start, end in zip(keyframes, keyframes[1:]))
+        for gap in (make_gap(start, end) for start, end in pairwise(keyframes))
         if gap is not None
     ]
 

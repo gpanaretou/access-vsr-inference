@@ -17,6 +17,8 @@ Frames come out in order, and pushes plus the flush yield exactly as many
 frames as went in.
 """
 
+from itertools import pairwise
+
 import numpy as np
 import torch
 
@@ -135,7 +137,7 @@ class VSRStream:
 
         gaps = [
             gap
-            for gap in (make_gap(a, b) for a, b in zip(anchors, anchors[1:]))
+            for gap in (make_gap(a, b) for a, b in pairwise(anchors))
             if gap is not None
         ]
         if gaps:

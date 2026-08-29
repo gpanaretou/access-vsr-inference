@@ -91,10 +91,7 @@ def to_numpy(tensor: torch.Tensor) -> list[np.ndarray]:
     """Converts a (N, C, H, W) or (1, C, H, W) tensor to uint8 (H, W, C) arrays."""
     if tensor.ndim == 3:
         tensor = tensor.unsqueeze(0)
-
-    # Every step here is out-of-place: Tensor.float() returns self when the
-    # tensor is already float32, so an in-place clamp/mul would scale the
-    # caller's frame by 255 behind its back.
+        
     array = (
         tensor.detach().to(torch.float32).clamp(0.0, 1.0).mul(255.0).round()
         .to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
