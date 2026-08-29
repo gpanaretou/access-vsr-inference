@@ -4,10 +4,11 @@ Symbols are resolved lazily so that `import vsr` -- and in particular
 `vsr.scheduling`, which is pure Python -- does not pull in torch and diffusers.
 """
 
-from .scheduling import Gap, Plan, plan_schedule
+from .scheduling import Gap, Plan, is_keyframe, make_gap, plan_schedule
 
 __all__ = [
     "VSRPipeline",
+    "VSRStream",
     "SuperResolutionPipeline",
     "InterpolationPipeline",
     "plan_schedule",
@@ -17,6 +18,7 @@ __all__ = [
 
 _LAZY = {
     "VSRPipeline": (".pipeline", "VSRPipeline"),
+    "VSRStream": (".streaming", "VSRStream"),
     "SuperResolutionPipeline": (".super_resolution", "SuperResolutionPipeline"),
     "InterpolationPipeline": (".interpolation", "InterpolationPipeline"),
 }

@@ -119,27 +119,45 @@ class VSRPipeline:
         )
         return [frame_io.to_numpy(hr[i])[0] for i in range(plan.num_frames)]
 
+    def stream(self, k: int | None = None):
+        """Returns a VSRStream for feeding this pipeline frames batch-at-a-time.
+
+        Use this instead of calling the pipeline once per batch: a per-batch
+        call restarts the keyframe stride at every boundary.
+        """
+        from .streaming import VSRStream
+
+        return VSRStream(self, k=k)
+
+    def run_sr(self, frames: torch.Tensor) -> list[torch.Tensor]:
+        """Super-resolves an (M, C, H, W) tensor, in batches of sr_batch_size.
+
+        Returns M separate (1, C, H, W) tensors. Shared by the whole-clip and
+        streaming paths so both get identical batching.
+        """
+        outputs: list[torch.Tensor] = []
+        for start in range(0, frames.shape[0], self.sr_batch_size):
+            produced = self.sr(frames[start : start + self.sr_batch_size])
+            outputs.extend(produced[i : i + 1] for i in range(produced.shape[0]))
+        return outputs
+
     def _super_resolve_keyframes(self, batch: torch.Tensor, plan) -> dict[int, torch.Tensor]:
         """Runs the diffusion model over the keyframes in batches of sr_batch_size."""
-        hr: dict[int, torch.Tensor] = {}
         keyframes = plan.keyframes
-
-        for start in range(0, len(keyframes), self.sr_batch_size):
-            indices = keyframes[start : start + self.sr_batch_size]
-            output = self.sr(batch[list(indices)])
-            for offset, index in enumerate(indices):
-                hr[index] = output[offset : offset + 1]
-
-        return hr
+        produced = self.run_sr(batch[list(keyframes)])
+        return dict(zip(keyframes, produced))
 
     def _interpolate_gaps(self, hr: dict[int, torch.Tensor], plan) -> None:
+        self.fill_gaps(hr, plan.gaps)
+
+    def fill_gaps(self, hr: dict[int, torch.Tensor], gaps) -> None:
         """Fills every non-keyframe in `hr` by interpolating its bounding keyframes.
 
         Gaps sharing a timestep tuple are batched together, so a clip normally
         needs (K - 1) RIFE calls for the full-length gaps plus a few for the
         shorter tail gap, rather than one call per synthesized frame.
         """
-        for timesteps, gaps in group_gaps_by_timesteps(plan.gaps).items():
+        for timesteps, gaps in group_gaps_by_timesteps(gaps).items():
             for start in range(0, len(gaps), self.interpolation_batch_size):
                 chunk = gaps[start : start + self.interpolation_batch_size]
                 img0 = torch.cat([hr[gap.start] for gap in chunk])

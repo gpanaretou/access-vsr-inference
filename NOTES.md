@@ -42,6 +42,15 @@ threaded through; the warp grid cache is keyed on device and dtype.
 which recompiles on every new input resolution. Now opt-in via
 `compile_decoder=True`.
 
+## Added
+
+**`VSRStream`.** The research code only ever processed whole clips from disk.
+Feeding `VSRPipeline` one batch at a time restarts the keyframe stride at each
+call boundary (`SiS` + `SiS` = `SiSSiS`), which at K=2 with 2-frame batches
+super-resolves every frame and makes K a no-op. `VSRStream` keeps the stride
+global by carrying the previous keyframe across calls, and is tested to produce
+byte-identical output to the whole-clip path for every batch size.
+
 ## Dropped
 
 - `motion_score` / Farneback motion gating (research-only; removes the OpenCV dependency)

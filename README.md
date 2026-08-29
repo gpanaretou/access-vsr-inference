@@ -54,6 +54,46 @@ print(plan.keyframes)         # frames the diffusion model will run on
 print(plan.num_interpolated)  # frames RIFE will synthesize
 ```
 
+## Streaming (batch-at-a-time input)
+
+**Do not call the pipeline once per batch.** Each call forces its own last
+frame to be a keyframe, so the stride restarts at every boundary — at K=2 with
+2-frame batches you get `SSSSSS`, every frame super-resolved, and K buys nothing.
+
+Use `VSRStream`, which carries the previous keyframe across calls and decides
+keyframes by absolute frame index:
+
+```python
+stream = pipeline.stream()
+
+for batch in batches:
+    for frame in stream.push(batch):
+        write(frame)
+
+for frame in stream.flush():      # drains the tail, then resets
+    write(frame)
+```
+
+Diffusion calls over a 24-frame clip at K=2 (whole-clip optimum is 13):
+
+| Batch size | One call per batch | `VSRStream` |
+|---|---|---|
+| 2 | 24 | **13** |
+| 3 | 16 | **13** |
+| 4 | 18 | **13** |
+| 8 | 15 | **13** |
+
+Streamed output is byte-identical to processing the whole clip in one call, for
+every batch size — that equivalence is what `tests/test_streaming.py` asserts.
+
+**`push()` returns fewer frames than you give it.** A frame between two
+keyframes cannot be emitted until the *following* keyframe arrives, so output
+lags input by up to K-1 frames and an early `push()` may return `[]`. Frames
+still come out in order, and pushes plus `flush()` yield exactly as many frames
+as went in. `frames_received`, `frames_emitted` and `frames_buffered` expose the
+progress. `flush()` resets the stream, so the same object can process the next
+clip; call `reset()` to abandon one partway.
+
 ## Input format
 
 Canonical input is a list of **uint8 `(H, W, 3)` RGB** arrays. Float arrays in
@@ -97,6 +137,7 @@ seam-free (at the cost of one extra SR call per split).
 ```
 vsr/
   pipeline.py            VSRPipeline — orchestration, batching, numpy boundary
+  streaming.py           VSRStream — stride-preserving batch-at-a-time input
   scheduling.py          keyframe/gap planning (pure Python, no torch)
   frames.py              numpy <-> tensor conversion
   padding.py             pad/unpad helpers

@@ -52,6 +52,24 @@ class Plan:
         )
 
 
+def make_gap(start: int, end: int) -> Gap | None:
+    """Builds the gap between two keyframes, or None if they are adjacent.
+
+    Shared by whole-clip planning and streaming, so both derive timesteps the
+    same way and a tail gap of any width is handled identically.
+    """
+    if end - start < 2:
+        return None
+    targets = tuple(range(start + 1, end))
+    timesteps = tuple((i - start) / (end - start) for i in targets)
+    return Gap(start=start, end=end, targets=targets, timesteps=timesteps)
+
+
+def is_keyframe(index: int, k: int) -> bool:
+    """Keyframe membership by absolute frame index, independent of batching."""
+    return index % k == 0
+
+
 def plan_schedule(num_frames: int, k: int) -> Plan:
     """Builds the keyframe/gap plan for a clip of `num_frames` frames.
 
@@ -73,13 +91,11 @@ def plan_schedule(num_frames: int, k: int) -> Plan:
 
     keyframes = sorted(set(range(0, num_frames, k)) | {num_frames - 1})
 
-    gaps = []
-    for start, end in zip(keyframes, keyframes[1:]):
-        if end - start < 2:
-            continue  # adjacent keyframes: nothing to synthesize
-        targets = tuple(range(start + 1, end))
-        timesteps = tuple((i - start) / (end - start) for i in targets)
-        gaps.append(Gap(start=start, end=end, targets=targets, timesteps=timesteps))
+    gaps = [
+        gap
+        for gap in (make_gap(start, end) for start, end in zip(keyframes, keyframes[1:]))
+        if gap is not None
+    ]
 
     plan = Plan(
         num_frames=num_frames, k=k, keyframes=tuple(keyframes), gaps=tuple(gaps)
