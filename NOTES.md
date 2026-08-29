@@ -65,28 +65,12 @@ byte-identical output to the whole-clip path for every batch size.
 
 ## Preserved deliberately
 
-The UNet surgery in `super_resolution/pipeline.py` (75% channel pruning,
+The UNet surgery in `super_resolution/model.py` (75% channel pruning,
 stripping time embeddings and cross-attention, the custom block forwards, the
 `body.N` checkpoint key remapping) is carried over as-is. It has to match the
 surgery used at training time or the checkpoint will not load onto it.
 
 ## Verification status
-
-Verified in the new repo (`uv run pytest`, 1160 passing):
-
-- **Scheduling** — every (N, K) pair up to N=40 covers each output frame exactly
-  once, preserves frame count, and puts each timestep at its true source position.
-- **Routing** — the pipeline drives stub models over a clip whose frame *i* is a
-  solid value *i*; every frame comes back at its own index for K=1,2,3.
-- **numpy boundary and padding** — uint8 roundtrip, layout detection, rejection
-  of 0-255 floats / ragged clips / non-RGB, pad-unpad identity, reflect fallback.
-- **RIFE stage against the real checkpoint** — the stripped `IFNet` loads
-  `flownet.pkl` with **zero missing keys**; the only unexpected keys are
-  `teacher.*` and `caltime.*`, the training-only blocks. A forward pass at
-  unaligned resolutions roundtrips, and a square moving 10px→50px interpolates
-  monotonically (34.6 / 44.5 / 54.0 at t=0.25/0.5/0.75).
-- **Dependencies** — every `diffusers` import path resolves against 0.33.0, and
-  the weight paths in `weights.py` match both Hub repos, which are public and ungated.
 
 Not verified:
 
@@ -94,7 +78,7 @@ Not verified:
   assembled on, and running it needs the ~3.5 GB `sd-research/stable-diffusion-2-1-base`
   download. In particular the checkpoint-key match for `RefactoredNet` is
   unconfirmed — the equivalent check that caught nothing on the RIFE side has
-  not been run here. `_load_model_weights` uses `strict=False`, so a broken key
+  not been run here. `load_model_weights` uses `strict=False`, so a broken key
   remap would load silently and produce garbage rather than raising.
   **Run the same key audit before trusting output:**
 

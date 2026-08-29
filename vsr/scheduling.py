@@ -3,12 +3,9 @@
 The pipeline trades diffusion-SR calls for cheap RIFE interpolation: only
 every K-th frame is super-resolved, and the frames in between are synthesized
 from the surrounding HR keyframe pair. The frame count is preserved -- N
-frames in, N frames out -- so K is a cost knob, not a frame-rate knob.
+frames in, N frames out.
 
-Scheduling is expressed as keyframe indices plus per-gap timesteps rather than
-fixed-size chunks. RIFE accepts an arbitrary float timestep, so a gap of any
-length is handled by the same code path; this is what makes the plan exact for
-every (num_frames, k) pair instead of only when (num_frames - 1) % k == 0.
+Scheduling is expressed as keyframe indices plus per-gap timesteps.
 """
 
 from dataclasses import dataclass
