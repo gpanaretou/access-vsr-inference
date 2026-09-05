@@ -36,12 +36,8 @@ fixed-size chunks:
 ```
 keyframes = sorted(set(range(0, N, K)) | {N - 1})
 # for each consecutive pair (a, b), frame i in (a, b) is RIFE'd at t = (i - a) / (b - a)
+# so for K = 2, RIFE interpolates one frame at 0.5, exactly in-between frames a and b.
 ```
-
-RIFE takes an arbitrary float timestep, so a gap of any length works through
-the same path. The final frame is always a keyframe (there is no later frame to
-interpolate it from), which costs at most one extra SR call per clip and keeps
-the tail temporally correct when `N` is not congruent to 1 mod K.
 
 `vsr.scheduling` is pure Python with no torch dependency, so you can inspect the
 plan for a clip without loading anything:
@@ -58,7 +54,7 @@ print(plan.num_interpolated)  # frames RIFE will synthesize
 
 **Do not call the pipeline once per batch.** Each call forces its own last
 frame to be a keyframe, so the stride restarts at every boundary — at K=2 with
-2-frame batches you get `SSSSSS`, every frame super-resolved, and K buys nothing.
+2-frame batches you get `SSSSSS`, every frame super-resolved, which means no interpolation.
 
 Use `VSRStream`, which carries the previous keyframe across calls and decides
 keyframes by absolute frame index:
@@ -82,9 +78,6 @@ Diffusion calls over a 24-frame clip at K=2 (whole-clip optimum is 13):
 | 3 | 16 | **13** |
 | 4 | 18 | **13** |
 | 8 | 15 | **13** |
-
-Streamed output is byte-identical to processing the whole clip in one call, for
-every batch size — that equivalence is what `tests/test_streaming.py` asserts.
 
 **`push()` returns fewer frames than you give it.** A frame between two
 keyframes cannot be emitted until the *following* keyframe arrives, so output
@@ -122,14 +115,6 @@ pulled from the Hub by `diffusers`. RIFE weights are only fetched when `k > 1`.
 | `batch_size` | `4` | Batch size shared across SR and interpolation. Larger is markedly cheaper per frame; bounded by VRAM. |
 | `compile_decoder` | `False` | `torch.compile` the decoder. Recompiles on every new input resolution — only worth it for a fixed-resolution workload. |
 | `device` / `dtype` | auto | Defaults to CUDA with bf16 (fp16 if bf16 is unsupported), else CPU/fp32. |
-
-## Memory
-
-A clip is processed in one call and all HR frames are held on-device until it
-returns. At 4x, a 720p output frame is ~5.3 MB in bf16, so a 300-frame clip is
-roughly 1.6 GB on top of model weights. Split long clips at the call boundary;
-because the first and last frames of every call are keyframes, splitting is
-seam-free (at the cost of one extra SR call per split).
 
 ## Layout
 
