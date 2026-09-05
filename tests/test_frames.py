@@ -38,7 +38,9 @@ def test_float_frames_outside_unit_range_are_rejected():
     """0-255 floats would be silently 255x too bright rather than erroring."""
     with pytest.raises(ValueError, match=r"\[0, 1\]"):
         frame_io.to_batch(
-            [np.full((8, 8, 3), 200.0, dtype=np.float32)], device="cpu", dtype=torch.float32
+            [np.full((8, 8, 3), 200.0, dtype=np.float32)],
+            device="cpu",
+            dtype=torch.float32,
         )
 
 
@@ -46,7 +48,8 @@ def test_ragged_clips_are_rejected():
     with pytest.raises(ValueError, match="share a shape"):
         frame_io.to_batch(
             [np.zeros((8, 8, 3), np.uint8), np.zeros((9, 8, 3), np.uint8)],
-            device="cpu", dtype=torch.float32,
+            device="cpu",
+            dtype=torch.float32,
         )
 
 
@@ -56,7 +59,9 @@ def test_empty_clip_is_rejected():
 
 
 def test_out_of_range_output_is_clamped_not_wrapped():
-    out = frame_io.to_numpy(torch.tensor([[[[-1.0, 2.0]]]]).expand(1, 3, 1, 2).contiguous())
+    out = frame_io.to_numpy(
+        torch.tensor([[[[-1.0, 2.0]]]]).expand(1, 3, 1, 2).contiguous()
+    )
     assert out[0].min() == 0 and out[0].max() == 255
 
 

@@ -98,7 +98,9 @@ def test_gaps_of_equal_span_batch_together():
 def test_tail_gap_batches_separately():
     plan = plan_schedule(12, 3)
     grouped = group_gaps_by_timesteps(plan.gaps)
-    assert len(grouped) == 2, "full-length gaps and the short tail need separate batches"
+    assert len(grouped) == 2, (
+        "full-length gaps and the short tail need separate batches"
+    )
 
 
 @pytest.mark.parametrize("bad_k", [0, -1])

@@ -9,8 +9,8 @@ from vsr import VSRPipeline
 
 pipeline = VSRPipeline(k=2, natten_layers=3)
 
-lr_frames = [...]            # list of uint8 (H, W, 3) RGB arrays, in order
-hr_frames = pipeline(lr_frames)   # list of uint8 (4H, 4W, 3) RGB arrays
+lr_frames = [...]  # list of uint8 (H, W, 3) RGB arrays, in order
+hr_frames = pipeline(lr_frames)  # list of uint8 (4H, 4W, 3) RGB arrays
 ```
 
 ## The K knob
@@ -50,7 +50,7 @@ plan for a clip without loading anything:
 from vsr.scheduling import plan_schedule
 
 plan = plan_schedule(num_frames=100, k=3)
-print(plan.keyframes)         # frames the diffusion model will run on
+print(plan.keyframes)  # frames the diffusion model will run on
 print(plan.num_interpolated)  # frames RIFE will synthesize
 ```
 
@@ -70,7 +70,7 @@ for batch in batches:
     for frame in stream.push(batch):
         write(frame)
 
-for frame in stream.flush():      # drains the tail, then resets
+for frame in stream.flush():  # drains the tail, then resets
     write(frame)
 ```
 

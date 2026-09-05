@@ -36,7 +36,9 @@ def ensure_super_resolution_weights(cache_dir: str = DEFAULT_CACHE) -> tuple[str
     decoder_ckpt = os.path.join(local_dir, SR_DECODER_RELPATH)
     for path in (model_ckpt, decoder_ckpt):
         if not os.path.isfile(path):
-            raise FileNotFoundError(f"expected weight file missing after download: {path}")
+            raise FileNotFoundError(
+                f"expected weight file missing after download: {path}"
+            )
     return model_ckpt, decoder_ckpt
 
 

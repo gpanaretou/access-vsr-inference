@@ -59,7 +59,9 @@ class VSRPipeline:
         from .super_resolution import SuperResolutionPipeline
 
         if sr_model_ckpt is None or sr_decoder_ckpt is None:
-            downloaded_model, downloaded_decoder = weights.ensure_super_resolution_weights(cache_dir)
+            downloaded_model, downloaded_decoder = (
+                weights.ensure_super_resolution_weights(cache_dir)
+            )
             sr_model_ckpt = sr_model_ckpt or downloaded_model
             sr_decoder_ckpt = sr_decoder_ckpt or downloaded_decoder
 
@@ -79,7 +81,9 @@ class VSRPipeline:
         self.interpolation = None
         if k > 1:
             if interpolation_model_dir is None:
-                interpolation_model_dir = weights.ensure_interpolation_weights(cache_dir)
+                interpolation_model_dir = weights.ensure_interpolation_weights(
+                    cache_dir
+                )
             self.interpolation = InterpolationPipeline(
                 model_dir=interpolation_model_dir, device=self.device
             )
@@ -139,7 +143,9 @@ class VSRPipeline:
             outputs.extend(produced[i : i + 1] for i in range(produced.shape[0]))
         return outputs
 
-    def _super_resolve_keyframes(self, batch: torch.Tensor, plan) -> dict[int, torch.Tensor]:
+    def _super_resolve_keyframes(
+        self, batch: torch.Tensor, plan
+    ) -> dict[int, torch.Tensor]:
         """Runs the diffusion model over the keyframes in batches of batch_size."""
         keyframes = plan.keyframes
         produced = self.run_sr(batch[list(keyframes)])

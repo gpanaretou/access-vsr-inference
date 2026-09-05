@@ -22,8 +22,14 @@ class AutoNattenAttentionProcessor2D(AttnProcessor2_0):
         self.stride = stride
         self.aspect_ratio = aspect_ratio
 
-
-    def __call__(self, attn, hidden_states, encoder_hidden_states=None, attention_mask=None, **kwargs):
+    def __call__(
+        self,
+        attn,
+        hidden_states,
+        encoder_hidden_states=None,
+        attention_mask=None,
+        **kwargs,
+    ):
         if encoder_hidden_states is not None:
             return attn.processor.__class__()(
                 attn, hidden_states, encoder_hidden_states, attention_mask, **kwargs
@@ -37,8 +43,8 @@ class AutoNattenAttentionProcessor2D(AttnProcessor2_0):
         target_seq_len = H * W
 
         if not self.dilation:
-            self.dilation = min(H,W) // self.kernel_size
-            
+            self.dilation = min(H, W) // self.kernel_size
+
         pad_len = target_seq_len - seq_len
         if pad_len > 0:
             hidden_states = F.pad(hidden_states, (0, 0, 0, pad_len))
@@ -55,11 +61,15 @@ class AutoNattenAttentionProcessor2D(AttnProcessor2_0):
         key = key.view(bsz, H, W, attn.heads, head_dim).contiguous()
         value = value.view(bsz, H, W, attn.heads, head_dim).contiguous()
 
-        out = na2d(query, key, value, kernel_size=self.kernel_size,
-                    dilation=self.dilation,
-                    stride=self.stride
-                )
-        
+        out = na2d(
+            query,
+            key,
+            value,
+            kernel_size=self.kernel_size,
+            dilation=self.dilation,
+            stride=self.stride,
+        )
+
         out = out.view(bsz, target_seq_len, dim)
 
         if pad_len > 0:

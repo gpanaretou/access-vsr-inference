@@ -22,7 +22,13 @@ class InterpolationPipeline:
         self.model = RifeModel(self.device).load(model_dir)
 
     @torch.no_grad()
-    def __call__(self, img0: torch.Tensor, img1: torch.Tensor, timestep: float, scale: float = 1.0):
+    def __call__(
+        self,
+        img0: torch.Tensor,
+        img1: torch.Tensor,
+        timestep: float,
+        scale: float = 1.0,
+    ):
         """Interpolates one frame per (img0, img1) pair in the batch.
 
         img0/img1: (B, 3, H, W) tensors in [0, 1] of any resolution.

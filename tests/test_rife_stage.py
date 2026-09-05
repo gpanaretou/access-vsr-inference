@@ -23,7 +23,9 @@ from vsr.weights import DEFAULT_CACHE, INTERPOLATION_RELPATH
 
 _TRAIN_LOG = os.path.join(DEFAULT_CACHE, "interpolation", INTERPOLATION_RELPATH)
 _HAS_WEIGHTS = os.path.isfile(os.path.join(_TRAIN_LOG, "flownet.pkl"))
-requires_weights = pytest.mark.skipif(not _HAS_WEIGHTS, reason="RIFE weights not downloaded")
+requires_weights = pytest.mark.skipif(
+    not _HAS_WEIGHTS, reason="RIFE weights not downloaded"
+)
 
 
 @pytest.mark.parametrize("size", [(64, 64), (128, 192)])
@@ -72,10 +74,14 @@ def test_interpolated_motion_tracks_the_timestep():
 
     def centroid_x(tensor):
         column_mass = tensor[0, 0].numpy().sum(0)
-        return float((column_mass * np.arange(len(column_mass))).sum() / column_mass.sum())
+        return float(
+            (column_mass * np.arange(len(column_mass))).sum() / column_mass.sum()
+        )
 
     img0, img1 = square(10), square(50)
-    positions = [centroid_x(pipeline(img0, img1, timestep=t)) for t in (0.25, 0.5, 0.75)]
+    positions = [
+        centroid_x(pipeline(img0, img1, timestep=t)) for t in (0.25, 0.5, 0.75)
+    ]
 
     assert positions == sorted(positions), "interpolated motion is not monotonic in t"
     assert centroid_x(img0) < positions[0]

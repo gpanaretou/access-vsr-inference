@@ -63,10 +63,14 @@ def _halve_channels(model):
             in_channels = int(module.in_channels * PRUNE_FACTOR)
             out_channels = int(module.out_channels * PRUNE_FACTOR)
             new_conv = nn.Conv2d(
-                in_channels=in_channels, out_channels=out_channels,
-                kernel_size=module.kernel_size, stride=module.stride,
-                padding=module.padding, dilation=module.dilation,
-                groups=module.groups, bias=module.bias is not None,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=module.kernel_size,
+                stride=module.stride,
+                padding=module.padding,
+                dilation=module.dilation,
+                groups=module.groups,
+                bias=module.bias is not None,
             )
             with torch.inference_mode():
                 new_conv.weight.copy_(module.weight[:out_channels, :in_channels])
@@ -79,7 +83,8 @@ def _halve_channels(model):
             in_features = int(module.in_features * PRUNE_FACTOR)
             out_features = int(module.out_features * PRUNE_FACTOR)
             new_linear = nn.Linear(
-                in_features=in_features, out_features=out_features,
+                in_features=in_features,
+                out_features=out_features,
                 bias=module.bias is not None,
             )
             with torch.inference_mode():
@@ -95,8 +100,10 @@ def _halve_channels(model):
                 if num_channels % num_groups == 0:
                     break
             new_gn = nn.GroupNorm(
-                num_groups=num_groups, num_channels=num_channels,
-                eps=module.eps, affine=module.affine,
+                num_groups=num_groups,
+                num_channels=num_channels,
+                eps=module.eps,
+                affine=module.affine,
             )
             with torch.inference_mode():
                 new_gn.weight.copy_(module.weight[:num_channels])
@@ -107,7 +114,8 @@ def _halve_channels(model):
         elif isinstance(module, nn.LayerNorm):
             normalized_shape = int(module.normalized_shape[0] * PRUNE_FACTOR)
             new_ln = nn.LayerNorm(
-                normalized_shape, eps=module.eps,
+                normalized_shape,
+                eps=module.eps,
                 elementwise_affine=module.elementwise_affine,
             )
             with torch.inference_mode():
@@ -126,7 +134,9 @@ def _prepare_pruned_unet(unet):
     if hasattr(unet, "time_embedding"):
         del unet.time_embedding
 
-    unet.apply(lambda m: m.register_forward_pre_hook(lambda module, p: p[0].to(unet.device)))
+    unet.apply(
+        lambda m: m.register_forward_pre_hook(lambda module, p: p[0].to(unet.device))
+    )
 
     new_conv_in = nn.Conv2d(16, 320, 3, padding=1)
     new_conv_in.weight.data = unet.conv_in.weight.data.repeat(1, 4, 1, 1)
@@ -155,7 +165,9 @@ def _prepare_pruned_unet(unet):
         elif isinstance(module, DownBlock2D):
             module.forward = types.MethodType(MyDownBlock2D_SD_forward, module)
         elif isinstance(module, UNetMidBlock2DCrossAttn):
-            module.forward = types.MethodType(MyUNetMidBlock2DCrossAttn_SD_forward, module)
+            module.forward = types.MethodType(
+                MyUNetMidBlock2DCrossAttn_SD_forward, module
+            )
         elif isinstance(module, UpBlock2D):
             module.forward = types.MethodType(MyUpBlock2D_SD_forward, module)
         elif isinstance(module, CrossAttnUpBlock2D):
@@ -256,9 +268,14 @@ def _load_full_checkpoint(ckpt_path, device):
 def load_decoder(ckpt_path, device, dtype):
     """Loads the VAE decoder whose blocks are grafted onto the pruned UNet."""
     decoder = Decoder(
-        in_channels=4, out_channels=3, up_block_types=["UpDecoderBlock2D"] * 4,
-        block_out_channels=[64, 128, 256, 256], layers_per_block=2,
-        norm_num_groups=32, act_fn="silu", norm_type="group",
+        in_channels=4,
+        out_channels=3,
+        up_block_types=["UpDecoderBlock2D"] * 4,
+        block_out_channels=[64, 128, 256, 256],
+        layers_per_block=2,
+        norm_num_groups=32,
+        act_fn="silu",
+        norm_type="group",
         mid_block_add_attention=True,
     ).to(device=device, dtype=dtype)
 

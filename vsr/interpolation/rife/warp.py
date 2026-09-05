@@ -14,12 +14,16 @@ def warp(tenInput, tenFlow):
     key = (str(tenFlow.device), str(tenFlow.dtype), str(tenFlow.size()))
     if key not in _backwarp_grid_cache:
         tenHorizontal = (
-            torch.linspace(-1.0, 1.0, tenFlow.shape[3], device=tenFlow.device, dtype=tenFlow.dtype)
+            torch.linspace(
+                -1.0, 1.0, tenFlow.shape[3], device=tenFlow.device, dtype=tenFlow.dtype
+            )
             .view(1, 1, 1, tenFlow.shape[3])
             .expand(tenFlow.shape[0], -1, tenFlow.shape[2], -1)
         )
         tenVertical = (
-            torch.linspace(-1.0, 1.0, tenFlow.shape[2], device=tenFlow.device, dtype=tenFlow.dtype)
+            torch.linspace(
+                -1.0, 1.0, tenFlow.shape[2], device=tenFlow.device, dtype=tenFlow.dtype
+            )
             .view(1, 1, tenFlow.shape[2], 1)
             .expand(tenFlow.shape[0], -1, -1, tenFlow.shape[3])
         )
@@ -35,5 +39,9 @@ def warp(tenInput, tenFlow):
 
     grid = (_backwarp_grid_cache[key] + tenFlow).permute(0, 2, 3, 1)
     return torch.nn.functional.grid_sample(
-        input=tenInput, grid=grid, mode="bilinear", padding_mode="border", align_corners=True
+        input=tenInput,
+        grid=grid,
+        mode="bilinear",
+        padding_mode="border",
+        align_corners=True,
     )

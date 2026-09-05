@@ -12,6 +12,7 @@ def MyUNet2DConditionModel_SD_forward(self, x):
     x = self.body(x)
     return x
 
+
 def MyCrossAttnDownBlock2D_SD_forward(self, x):
     for i in range(2):
         x = self.resnets[i](x)
@@ -22,6 +23,7 @@ def MyCrossAttnDownBlock2D_SD_forward(self, x):
         skip.append(x)
     return x
 
+
 def MyCrossAttnUpBlock2D_SD_forward(self, x):
     for i in range(3):
         x = self.resnets[i](torch.cat([x, skip.pop()], dim=1))
@@ -30,11 +32,13 @@ def MyCrossAttnUpBlock2D_SD_forward(self, x):
         x = self.upsamplers[0](x)
     return x
 
+
 def MyDownBlock2D_SD_forward(self, x):
     for i in range(2):
         x = self.resnets[i](x)
         skip.append(x)
     return x
+
 
 def MyUNetMidBlock2DCrossAttn_SD_forward(self, x):
     x = self.resnets[0](x)
@@ -42,11 +46,13 @@ def MyUNetMidBlock2DCrossAttn_SD_forward(self, x):
     x = self.resnets[1](x)
     return x
 
+
 def MyUpBlock2D_SD_forward(self, x):
     for i in range(3):
         x = self.resnets[i](torch.cat([x, skip.pop()], dim=1))
     x = self.upsamplers[0](x)
     return x
+
 
 def MyResnetBlock2D_SD_forward(self, x_in):
     x = self.norm1(x_in)
@@ -58,6 +64,7 @@ def MyResnetBlock2D_SD_forward(self, x_in):
     if self.in_channels == self.out_channels:
         return x + x_in
     return x + self.conv_shortcut(x_in)
+
 
 def MyTransformer2DModel_SD_forward(self, x_in):
     b, c, h, w = x_in.shape

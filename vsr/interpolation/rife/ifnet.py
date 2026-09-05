@@ -16,8 +16,13 @@ from .warp import warp
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
     return nn.Sequential(
         nn.Conv2d(
-            in_planes, out_planes, kernel_size=kernel_size, stride=stride,
-            padding=padding, dilation=dilation, bias=True,
+            in_planes,
+            out_planes,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            bias=True,
         ),
         nn.LeakyReLU(0.2, True),
     )
@@ -70,7 +75,9 @@ class IFBlock(nn.Module):
         )
 
     def forward(self, x, flow=None, scale=1):
-        x = F.interpolate(x, scale_factor=1.0 / scale, mode="bilinear", align_corners=False)
+        x = F.interpolate(
+            x, scale_factor=1.0 / scale, mode="bilinear", align_corners=False
+        )
         if flow is not None:
             flow = F.interpolate(
                 flow, scale_factor=1.0 / scale, mode="bilinear", align_corners=False
@@ -79,7 +86,9 @@ class IFBlock(nn.Module):
         feat = self.conv0(x)
         feat = self.convblock(feat)
         tmp = self.lastconv(feat)
-        tmp = F.interpolate(tmp, scale_factor=scale, mode="bilinear", align_corners=False)
+        tmp = F.interpolate(
+            tmp, scale_factor=scale, mode="bilinear", align_corners=False
+        )
         flow = tmp[:, :4] * scale
         mask = tmp[:, 4:5]
         feat = tmp[:, 5:]
@@ -129,7 +138,16 @@ class IFNet(nn.Module):
                 wf1 = warp(f1, flow[:, 2:4])
                 fd, mask, feat = block(
                     torch.cat(
-                        (warped_img0[:, :3], warped_img1[:, :3], wf0, wf1, timestep, mask, feat), 1
+                        (
+                            warped_img0[:, :3],
+                            warped_img1[:, :3],
+                            wf0,
+                            wf1,
+                            timestep,
+                            mask,
+                            feat,
+                        ),
+                        1,
                     ),
                     flow,
                     scale=scale_list[i],

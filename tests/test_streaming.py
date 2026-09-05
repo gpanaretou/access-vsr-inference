@@ -41,7 +41,8 @@ def test_every_frame_lands_at_its_own_position(num_frames, k, batch_size):
     streamed = _stream_clip(_build(k), _ramp_clip(num_frames), batch_size)
     for index, frame in enumerate(streamed):
         np.testing.assert_array_equal(
-            frame, np.full((32, 32, 3), index, dtype=np.uint8),
+            frame,
+            np.full((32, 32, 3), index, dtype=np.uint8),
             err_msg=f"frame {index} misrouted (N={num_frames}, k={k}, batch={batch_size})",
         )
 
