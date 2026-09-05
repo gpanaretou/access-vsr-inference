@@ -37,8 +37,7 @@ class VSRPipeline:
         natten_kernel_size: int = 7,
         device: str | None = None,
         dtype: torch.dtype | None = None,
-        sr_batch_size: int = 4,
-        interpolation_batch_size: int = 8,
+        batch_size: int = 4,
         compile_decoder: bool = False,
         cache_dir: str = weights.DEFAULT_CACHE,
         sr_model_ckpt: str | None = None,
@@ -50,8 +49,7 @@ class VSRPipeline:
             raise ValueError(f"k must be >= 1, got {k}")
 
         self.k = k
-        self.sr_batch_size = sr_batch_size
-        self.interpolation_batch_size = interpolation_batch_size
+        self.batch_size = batch_size
 
         resolved_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.device = torch.device(resolved_device)
@@ -130,19 +128,19 @@ class VSRPipeline:
         return VSRStream(self, k=k)
 
     def run_sr(self, frames: torch.Tensor) -> list[torch.Tensor]:
-        """Super-resolves an (M, C, H, W) tensor, in batches of sr_batch_size.
+        """Super-resolves an (M, C, H, W) tensor, in batches of batch_size.
 
         Returns M separate (1, C, H, W) tensors. Shared by the whole-clip and
         streaming paths so both get identical batching.
         """
         outputs: list[torch.Tensor] = []
-        for start in range(0, frames.shape[0], self.sr_batch_size):
-            produced = self.sr(frames[start : start + self.sr_batch_size])
+        for start in range(0, frames.shape[0], self.batch_size):
+            produced = self.sr(frames[start : start + self.batch_size])
             outputs.extend(produced[i : i + 1] for i in range(produced.shape[0]))
         return outputs
 
     def _super_resolve_keyframes(self, batch: torch.Tensor, plan) -> dict[int, torch.Tensor]:
-        """Runs the diffusion model over the keyframes in batches of sr_batch_size."""
+        """Runs the diffusion model over the keyframes in batches of batch_size."""
         keyframes = plan.keyframes
         produced = self.run_sr(batch[list(keyframes)])
         return dict(zip(keyframes, produced))
@@ -158,8 +156,8 @@ class VSRPipeline:
         shorter tail gap, rather than one call per synthesized frame.
         """
         for timesteps, g in group_gaps_by_timesteps(gaps).items():
-            for start in range(0, len(g), self.interpolation_batch_size):
-                chunk = g[start : start + self.interpolation_batch_size]
+            for start in range(0, len(g), self.batch_size):
+                chunk = g[start : start + self.batch_size]
                 img0 = torch.cat([hr[gap.start] for gap in chunk])
                 img1 = torch.cat([hr[gap.end] for gap in chunk])
 

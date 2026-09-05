@@ -206,6 +206,53 @@ class RefactoredNet(nn.Module):
         return self.decode(x)
 
 
+def _load_full_checkpoint(ckpt_path, device):
+    """Unpickles a full Lightning training checkpoint for its `state_dict`.
+
+    The file also carries optimizer states and a `ModelCheckpoint` callback,
+    so unpickling it (`weights_only=False`, needed since it isn't just
+    tensors) requires `pytorch_lightning` importable even though none of that
+    is used here. Rather than pull in a training framework as a dependency of
+    an inference-only package, stand in a throwaway class for the one
+    reference when the real package isn't installed.
+    """
+    try:
+        import pytorch_lightning  # noqa: F401
+
+        return torch.load(ckpt_path, map_location=device, weights_only=False)
+    except ModuleNotFoundError:
+        pass
+
+    import sys
+    import types
+
+    class _UnusedLightningCallback:
+        def __setstate__(self, state):
+            pass
+
+    stub_modules = {
+        "pytorch_lightning": types.ModuleType("pytorch_lightning"),
+        "pytorch_lightning.callbacks": types.ModuleType("pytorch_lightning.callbacks"),
+        "pytorch_lightning.callbacks.model_checkpoint": types.ModuleType(
+            "pytorch_lightning.callbacks.model_checkpoint"
+        ),
+    }
+    stub_modules[
+        "pytorch_lightning.callbacks.model_checkpoint"
+    ].ModelCheckpoint = _UnusedLightningCallback
+
+    previous = {name: sys.modules.get(name) for name in stub_modules}
+    sys.modules.update(stub_modules)
+    try:
+        return torch.load(ckpt_path, map_location=device, weights_only=False)
+    finally:
+        for name, mod in previous.items():
+            if mod is None:
+                del sys.modules[name]
+            else:
+                sys.modules[name] = mod
+
+
 def load_decoder(ckpt_path, device, dtype):
     """Loads the VAE decoder whose blocks are grafted onto the pruned UNet."""
     decoder = Decoder(
@@ -215,7 +262,7 @@ def load_decoder(ckpt_path, device, dtype):
         mid_block_add_attention=True,
     ).to(device=device, dtype=dtype)
 
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    ckpt = _load_full_checkpoint(ckpt_path, device)
     decoder_state_dict = {
         k.replace("decoder.", ""): v
         for k, v in ckpt["state_dict"].items()

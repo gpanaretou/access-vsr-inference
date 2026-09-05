@@ -35,11 +35,10 @@ class _InterpolationStub:
         return img0 * (1.0 - timestep) + img1 * timestep
 
 
-def _build(k, sr_batch_size=4, interpolation_batch_size=8):
+def _build(k, batch_size=4):
     pipeline = object.__new__(VSRPipeline)
     pipeline.k = k
-    pipeline.sr_batch_size = sr_batch_size
-    pipeline.interpolation_batch_size = interpolation_batch_size
+    pipeline.batch_size = batch_size
     pipeline.device = torch.device("cpu")
     pipeline.dtype = torch.float32
     pipeline.sr = _SRStub()
@@ -95,13 +94,13 @@ def test_interpolation_is_batched_across_gaps():
 
 
 def test_interpolation_batch_size_is_respected():
-    pipeline = _build(3, interpolation_batch_size=2)
+    pipeline = _build(3, batch_size=2)
     pipeline(_ramp_clip(13))
     assert all(batch <= 2 for batch, _ in pipeline.interpolation.calls)
 
 
 def test_sr_batch_size_is_respected():
-    pipeline = _build(1, sr_batch_size=3)
+    pipeline = _build(1, batch_size=3)
     pipeline(_ramp_clip(10))
     assert pipeline.sr.calls == [3, 3, 3, 1]
 
